@@ -33,7 +33,7 @@ class Settings(BaseSettings):
 
     # Groq (cloud LLM — recommended for production)
     groq_api_key: str = ""
-    groq_model: str = "llama-3.1-70b-versatile"
+    groq_model: str = "llama-3.3-70b-versatile"
 
     # Ollama (local LLM — for local dev without API keys)
     ollama_base_url: str = "http://host.docker.internal:11434"
