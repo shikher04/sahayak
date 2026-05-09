@@ -4,15 +4,10 @@
   "outputDirectory": ".next",
   "installCommand": "npm install",
   "regions": ["bom1"],
-  "env": {
-    "NEXT_PUBLIC_API_URL": "@next_public_api_url",
-    "NEXTAUTH_SECRET": "@nextauth_secret",
-    "NEXTAUTH_URL": "@nextauth_url"
-  },
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "https://sahayak-api.railway.app/api/:path*"
+      "destination": "https://skillful-amazement.up.railway.app/api/:path*"
     }
   ],
   "headers": [
