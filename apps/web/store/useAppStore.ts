@@ -4,7 +4,17 @@
  */
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import type { UserProfile } from "@sahayak/shared-types";
+
+interface UserProfile {
+  state?: string;
+  age?: number;
+  gender?: "male" | "female" | "other";
+  annual_income?: string;
+  caste_category?: "general" | "obc" | "sc" | "st" | "ews";
+  occupation?: string;
+  has_land?: boolean;
+  land_area_hectares?: number;
+}
 
 interface AppState {
   // UI
