@@ -17,7 +17,7 @@ RUN pip install --upgrade pip && pip install -r requirements.txt
 
 # Pre-download the embedding model so it's baked into the image
 # This avoids a 560 MB download on first request in production
-RUN python -c "from sentence_transformers import SentenceTransformer; SentenceTransformer('intfloat/multilingual-e5-large')"
+RUN python -c "from sentence_transformers import SentenceTransformer; SentenceTransformer('sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2')"
 
 COPY . .
 

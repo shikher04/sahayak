@@ -37,7 +37,7 @@ _groq_client: AsyncGroq | None = None
 def _get_embedding_model() -> SentenceTransformer:
     global _embedding_model
     if _embedding_model is None:
-        _embedding_model = SentenceTransformer("intfloat/multilingual-e5-large")
+        _embedding_model = SentenceTransformer("sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2")
     return _embedding_model
 
 
@@ -121,7 +121,7 @@ async def _translate_to_english(text: str, source_lang: str) -> str:
 
 def _embed(text: str) -> list[float]:
     model = _get_embedding_model()
-    return model.encode(f"query: {text}", normalize_embeddings=True).tolist()
+    return model.encode(text, normalize_embeddings=True).tolist()
 
 
 async def _query_pinecone(

@@ -32,7 +32,7 @@ from database import AsyncSessionLocal, engine
 from models import Right, Scheme
 
 INDEX_NAME = os.getenv("PINECONE_INDEX_NAME", "sahayak-schemes")
-DIMENSION = 1024
+DIMENSION = 384
 BATCH_SIZE = 50
 
 _model: SentenceTransformer | None = None
@@ -41,8 +41,8 @@ _model: SentenceTransformer | None = None
 def get_model() -> SentenceTransformer:
     global _model
     if _model is None:
-        print("Loading multilingual-e5-large model...")
-        _model = SentenceTransformer("intfloat/multilingual-e5-large")
+        print("Loading paraphrase-multilingual-MiniLM-L12-v2 model...")
+        _model = SentenceTransformer("sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2")
         print("Model loaded.")
     return _model
 
@@ -50,8 +50,7 @@ def get_model() -> SentenceTransformer:
 def embed(texts: list[str]) -> list[list[float]]:
     model = get_model()
     # e5-large expects "passage: ..." prefix for indexing
-    prefixed = [f"passage: {t}" for t in texts]
-    vecs = model.encode(prefixed, normalize_embeddings=True, show_progress_bar=True)
+    vecs = model.encode(texts, normalize_embeddings=True, show_progress_bar=True)
     return [v.tolist() for v in vecs]
 
 
