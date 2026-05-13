@@ -1,0 +1,78 @@
+[
+  {
+    "name": "PM Kisan Samman Nidhi",
+    "ministry": "Ministry of Agriculture & Farmers Welfare",
+    "category": "agriculture",
+    "level": "central",
+    "state_code": null,
+    "description": "Direct income support of ₹6,000 per year to all land-holding farmer families",
+    "benefit_amount": "₹6,000/year",
+    "eligibility_criteria": {
+      "land_ownership": "required",
+      "farmer_status": "yes"
+    },
+    "required_documents": ["Aadhaar", "Land records", "Bank passbook"],
+    "application_url": "https://pmkisan.gov.in"
+  },
+  {
+    "name": "Ayushman Bharat - PM-JAY",
+    "ministry": "Ministry of Labour and Employment",
+    "category": "health",
+    "level": "central",
+    "state_code": null,
+    "description": "World's largest health assurance scheme providing ₹5 lakh health cover per family per year",
+    "benefit_amount": "₹5,00,000/year health cover",
+    "eligibility_criteria": {
+      "income_below": "₹5 lakh",
+      "bpl_status": "yes"
+    },
+    "required_documents": ["Aadhaar", "Income certificate", "Ration card"],
+    "application_url": "https://ayushmanbharat.gov.in"
+  },
+  {
+    "name": "PM Awas Yojana - Urban",
+    "ministry": "Ministry of Housing & Urban Affairs",
+    "category": "housing",
+    "level": "central",
+    "state_code": null,
+    "description": "Housing for All mission providing financial assistance for construction of pucca houses",
+    "benefit_amount": "₹1.5 - 2.67 lakh subsidy",
+    "eligibility_criteria": {
+      "urban_resident": "yes",
+      "income_below": "₹12 lakh"
+    },
+    "required_documents": ["Aadhaar", "Income certificate", "Property documents"],
+    "application_url": "https://pmaymis.gov.in"
+  },
+  {
+    "name": "Pradhan Mantri Jan Dhan Yojana",
+    "ministry": "Ministry of Finance",
+    "category": "savings",
+    "level": "central",
+    "state_code": null,
+    "description": "Financial inclusion program providing universal access to banking services with benefits",
+    "benefit_amount": "₹2 lakh accident insurance + ₹100 monthly savings",
+    "eligibility_criteria": {
+      "age": "10+",
+      "bank_account": "no"
+    },
+    "required_documents": ["Aadhaar", "Address proof"],
+    "application_url": "https://pmjdy.gov.in"
+  },
+  {
+    "name": "MNREGA - Mahatma Gandhi National Rural Employment Guarantee Act",
+    "ministry": "Ministry of Rural Development",
+    "category": "employment",
+    "level": "central",
+    "state_code": null,
+    "description": "Guarantee of 100 days of wage employment per financial year to rural households",
+    "benefit_amount": "100 days/year at state wage rate",
+    "eligibility_criteria": {
+      "rural_resident": "yes",
+      "age": "18+",
+      "seeking_employment": "yes"
+    },
+    "required_documents": ["Aadhaar", "Address proof", "Bank account details"],
+    "application_url": "https://nrega.nic.in"
+  }
+]
