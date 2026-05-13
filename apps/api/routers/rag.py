@@ -5,15 +5,22 @@ from fastapi import APIRouter
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
-from services.rag_pipeline import run_rag_pipeline
+from services.rag_pipeline import run_rag_pipeline, _get_groq, _translate_to_english
+from config import settings
 
 router = APIRouter(prefix="/rag", tags=["rag"])
+
+
+class HistoryMessage(BaseModel):
+    role: str
+    content: str
 
 
 class RAGQueryRequest(BaseModel):
     query: str
     language: str = "en"
     profile: dict[str, Any] | None = None
+    history: list[HistoryMessage] | None = None
 
 
 @router.post("/query")
@@ -24,6 +31,7 @@ async def rag_query(request: RAGQueryRequest) -> StreamingResponse:
             query=request.query,
             language=request.language,
             profile=request.profile,
+            history=[m.model_dump() for m in request.history] if request.history else None,
         ),
         media_type="text/event-stream",
         headers={
@@ -41,6 +49,7 @@ async def rag_stream(request: RAGQueryRequest) -> StreamingResponse:
             query=request.query,
             language=request.language,
             profile=request.profile,
+            history=[m.model_dump() for m in request.history] if request.history else None,
         ),
         media_type="text/event-stream",
         headers={
@@ -53,27 +62,28 @@ async def rag_stream(request: RAGQueryRequest) -> StreamingResponse:
 
 @router.post("/translate")
 async def translate_text(body: dict[str, str]) -> dict[str, str]:
-    """Translate arbitrary text to a target language using Claude."""
-    from services.rag_pipeline import _get_anthropic
-    from config import settings
-
+    """Translate arbitrary text to a target language using Groq."""
     text = body.get("text", "")
     target_language = body.get("target_language", "English")
     if not text:
         return {"translated": ""}
 
-    client = _get_anthropic()
-    response = await client.messages.create(
-        model=settings.claude_model,
-        max_tokens=512,
-        messages=[
-            {
-                "role": "user",
-                "content": (
-                    f"Translate the following text to {target_language}. "
-                    f"Return only the translation, no explanation.\n\n{text}"
-                ),
-            }
-        ],
-    )
-    return {"translated": response.content[0].text.strip()}
+    if settings.llm_provider == "groq" and settings.groq_api_key:
+        client = _get_groq()
+        response = await client.chat.completions.create(
+            model=settings.groq_model,
+            max_tokens=512,
+            messages=[
+                {
+                    "role": "user",
+                    "content": (
+                        f"Translate the following text to {target_language}. "
+                        f"Return only the translation, no explanation.\n\n{text}"
+                    ),
+                }
+            ],
+        )
+        return {"translated": response.choices[0].message.content.strip()}
+
+    # Fallback: return original text if no LLM available
+    return {"translated": text}

@@ -5,7 +5,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import {
-  Send, Loader2, MessageCircle, FileText, RefreshCw, Globe,
+  Send, Loader2, MessageCircle, FileText, RefreshCw, Globe, Copy, Check, Clock,
 } from "lucide-react";
 
 interface Source {
@@ -21,6 +21,7 @@ interface Message {
   sources?: Source[];
   docsRetrieved?: number;
   streaming?: boolean;
+  timestamp?: number;
 }
 
 const LANGUAGES: { code: string; label: string }[] = [
@@ -59,11 +60,44 @@ function SourceList({ sources, count }: { sources: Source[]; count: number }) {
               {src.chunk_type && (
                 <span className="flex-shrink-0 text-gray-400 capitalize">{src.chunk_type}</span>
               )}
+              <span className="flex-shrink-0 text-gray-300 ml-auto">
+                {Math.round(src.score * 100)}%
+              </span>
             </div>
           ))}
         </div>
       )}
     </div>
+  );
+}
+
+function CopyButton({ text }: { text: string }) {
+  const [copied, setCopied] = useState(false);
+  const copy = () => {
+    navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+  return (
+    <button
+      onClick={copy}
+      className="p-1 rounded text-gray-300 hover:text-gray-500 transition-colors opacity-0 group-hover:opacity-100"
+      title="Copy"
+    >
+      {copied ? <Check className="w-3.5 h-3.5 text-green-500" /> : <Copy className="w-3.5 h-3.5" />}
+    </button>
+  );
+}
+
+function MessageTime({ timestamp }: { timestamp?: number }) {
+  if (!timestamp) return null;
+  const date = new Date(timestamp);
+  const timeStr = date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  return (
+    <span className="flex items-center gap-0.5 text-[10px] text-gray-300 mt-1">
+      <Clock className="w-2.5 h-2.5" />
+      {timeStr}
+    </span>
   );
 }
 
@@ -98,6 +132,7 @@ export function ChatInterface({ initialScheme, initialRight }: ChatInterfaceProp
       id: crypto.randomUUID(),
       role: "user",
       content: query.trim(),
+      timestamp: Date.now(),
     };
 
     const assistantMsgId = crypto.randomUUID();
@@ -106,6 +141,7 @@ export function ChatInterface({ initialScheme, initialRight }: ChatInterfaceProp
       role: "assistant",
       content: "",
       streaming: true,
+      timestamp: Date.now(),
     };
 
     setMessages((m) => [...m, userMsg, assistantMsg]);
@@ -113,10 +149,16 @@ export function ChatInterface({ initialScheme, initialRight }: ChatInterfaceProp
     setIsStreaming(true);
 
     try {
+      // Build history from current messages (exclude the streaming placeholder)
+      const history = messages
+        .filter((m) => !m.streaming)
+        .slice(-10) // last 5 exchanges
+        .map((m) => ({ role: m.role, content: m.content }));
+
       const response = await fetch("/api/rag/stream", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query: query.trim(), language }),
+        body: JSON.stringify({ query: query.trim(), language, history }),
       });
 
       if (!response.body) throw new Error("No response body");
@@ -269,31 +311,47 @@ export function ChatInterface({ initialScheme, initialRight }: ChatInterfaceProp
               </div>
             )}
 
-            <div
-              className={`max-w-[85%] ${
-                msg.role === "user"
-                  ? "bg-saffron text-white rounded-2xl rounded-tr-sm px-4 py-3"
-                  : "bg-white rounded-2xl rounded-tl-sm px-4 py-3 shadow-sm border border-gray-100"
-              }`}
-            >
-              {msg.role === "assistant" ? (
-                <div className={`prose prose-sm max-w-none text-gray-800 ${msg.streaming && !msg.content ? "streaming-cursor" : ""}`}>
-                  {msg.streaming && !msg.content ? (
-                    <span className="text-gray-400 text-sm">{t("thinking")}</span>
-                  ) : (
-                    <>
-                      <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.content}</ReactMarkdown>
-                      {msg.streaming && <span className="streaming-cursor" />}
-                    </>
-                  )}
-                </div>
-              ) : (
-                <p className="text-sm">{msg.content}</p>
-              )}
-
-              {!msg.streaming && msg.sources && msg.docsRetrieved !== undefined && (
-                <SourceList sources={msg.sources} count={msg.docsRetrieved} />
-              )}
+            <div className={`max-w-[85%] flex flex-col ${msg.role === "user" ? "items-end" : "items-start"}`}>
+              <div
+                className={`group relative ${
+                  msg.role === "user"
+                    ? "bg-saffron text-white rounded-2xl rounded-tr-sm px-4 py-3"
+                    : "bg-white rounded-2xl rounded-tl-sm px-4 py-3 shadow-sm border border-gray-100"
+                }`}
+              >
+                {msg.role === "assistant" ? (
+                  <>
+                    <div className={`prose prose-sm max-w-none text-gray-800 ${msg.streaming && !msg.content ? "streaming-cursor" : ""}`}>
+                      {msg.streaming && !msg.content ? (
+                        <div className="flex items-center gap-2 text-gray-400 text-sm py-1">
+                          <span className="flex gap-1">
+                            <span className="w-2 h-2 bg-saffron/40 rounded-full animate-bounce [animation-delay:0ms]" />
+                            <span className="w-2 h-2 bg-saffron/40 rounded-full animate-bounce [animation-delay:150ms]" />
+                            <span className="w-2 h-2 bg-saffron/40 rounded-full animate-bounce [animation-delay:300ms]" />
+                          </span>
+                          {t("thinking")}
+                        </div>
+                      ) : (
+                        <>
+                          <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.content}</ReactMarkdown>
+                          {msg.streaming && <span className="streaming-cursor" />}
+                        </>
+                      )}
+                    </div>
+                    {!msg.streaming && msg.content && (
+                      <div className="absolute top-2 right-2">
+                        <CopyButton text={msg.content} />
+                      </div>
+                    )}
+                    {!msg.streaming && msg.sources && msg.docsRetrieved !== undefined && (
+                      <SourceList sources={msg.sources} count={msg.docsRetrieved} />
+                    )}
+                  </>
+                ) : (
+                  <p className="text-sm">{msg.content}</p>
+                )}
+              </div>
+              <MessageTime timestamp={msg.timestamp} />
             </div>
           </div>
         ))}

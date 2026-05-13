@@ -70,10 +70,20 @@ LANGUAGE_NAMES: dict[str, str] = {
 }
 
 RAG_SYSTEM_PROMPT = (
-    "You are Sahayak, a helpful AI assistant for Indian citizens seeking information about "
-    "government schemes and their legal rights. Answer ONLY using the provided context. "
-    "If the answer is not in the context, say so honestly. Be simple, warm, and helpful. "
-    "Cite the specific scheme name or article number for every claim you make."
+    "You are Sahayak, a trusted AI assistant for Indian citizens seeking information about "
+    "government welfare schemes and legal rights. Your role is to help ordinary people "
+    "understand what benefits they are entitled to and how to access them.\n\n"
+    "Rules:\n"
+    "- Answer ONLY using the provided CONTEXT. Never invent scheme details.\n"
+    "- If the answer is not clearly in the context, say so honestly and suggest the user "
+    "visit the official portal or contact the relevant ministry.\n"
+    "- Always cite the specific scheme name, ministry, or article number for every claim.\n"
+    "- Use simple, friendly language. Avoid jargon. Structure answers with numbered steps "
+    "when explaining how to apply.\n"
+    "- If a user profile is provided, tailor the response to their state, income, occupation, "
+    "and category (SC/ST/OBC/EWS/General).\n"
+    "- When the user asks in a regional language, respond in that language.\n"
+    "- Always mention the application URL when available."
 )
 
 RAG_PROMPT_TEMPLATE = """\
@@ -176,14 +186,19 @@ def _build_context(documents: list[dict]) -> str:
     return "\n\n".join(chunks)
 
 
-async def _stream_groq(prompt: str) -> AsyncIterator[str]:
+async def _stream_groq(prompt: str, history: list[dict] | None = None) -> AsyncIterator[str]:
     client = _get_groq()
+    messages: list[dict] = [{"role": "system", "content": RAG_SYSTEM_PROMPT}]
+    if history:
+        # Include last 6 messages (3 exchanges) for context, excluding the current query
+        for msg in history[-6:]:
+            if msg.get("role") in ("user", "assistant") and msg.get("content"):
+                messages.append({"role": msg["role"], "content": msg["content"]})
+    messages.append({"role": "user", "content": prompt})
+
     stream = await client.chat.completions.create(
         model=settings.groq_model,
-        messages=[
-            {"role": "system", "content": RAG_SYSTEM_PROMPT},
-            {"role": "user", "content": prompt},
-        ],
+        messages=messages,
         max_tokens=settings.llm_max_tokens,
         stream=True,
     )
@@ -193,14 +208,29 @@ async def _stream_groq(prompt: str) -> AsyncIterator[str]:
             yield token
 
 
-async def _stream_ollama(prompt: str) -> AsyncIterator[str]:
+async def _stream_ollama(prompt: str, history: list[dict] | None = None) -> AsyncIterator[str]:
+    history_text = ""
+    if history:
+        for msg in history[-6:]:
+            role = msg.get("role", "")
+            content = msg.get("content", "")
+            if role == "user":
+                history_text += f"User: {content}\n"
+            elif role == "assistant":
+                history_text += f"Assistant: {content}\n"
+
+    full_prompt = f"SYSTEM: {RAG_SYSTEM_PROMPT}\n\n"
+    if history_text:
+        full_prompt += f"CONVERSATION HISTORY:\n{history_text}\n"
+    full_prompt += prompt
+
     async with httpx.AsyncClient(timeout=120) as client:
         async with client.stream(
             "POST",
             f"{settings.ollama_base_url}/api/generate",
             json={
                 "model": settings.ollama_model,
-                "prompt": f"SYSTEM: {RAG_SYSTEM_PROMPT}\n\n{prompt}",
+                "prompt": full_prompt,
                 "stream": True,
                 "options": {"num_predict": settings.llm_max_tokens},
             },
@@ -224,6 +254,7 @@ async def run_rag_pipeline(
     query: str,
     language: str = "en",
     profile: dict[str, Any] | None = None,
+    history: list[dict] | None = None,
 ) -> AsyncIterator[str]:
     """Full RAG pipeline. Yields SSE-formatted text chunks."""
 
@@ -285,9 +316,9 @@ async def run_rag_pipeline(
 
     try:
         if settings.llm_provider == "groq":
-            stream = _stream_groq(prompt)
+            stream = _stream_groq(prompt, history)
         else:
-            stream = _stream_ollama(prompt)
+            stream = _stream_ollama(prompt, history)
 
         async for token in stream:
             escaped = token.replace("\n", "\\n")
