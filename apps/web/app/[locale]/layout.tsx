@@ -6,6 +6,7 @@ import { ReactNode } from "react";
 import { Providers } from "@/components/layout/Providers";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
+import { MobileNav } from "@/components/layout/MobileNav";
 import "@/app/globals.css";
 
 const notoSans = Noto_Sans({
@@ -80,8 +81,9 @@ export default async function LocaleLayout({
         <NextIntlClientProvider messages={messages}>
           <Providers>
             <Navbar />
-            <main className="flex-1">{children}</main>
+            <main className="flex-1 pb-16 md:pb-0">{children}</main>
             <Footer />
+            <MobileNav />
           </Providers>
         </NextIntlClientProvider>
       </body>
