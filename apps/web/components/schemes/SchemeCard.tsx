@@ -85,28 +85,28 @@ export function SchemeCard({ scheme }: SchemeCardProps) {
 
   return (
     <div className="card flex flex-col gap-0 overflow-hidden group transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg">
-      {/* Coloured top strip with icon */}
-      <div className={`flex items-center justify-between px-5 pt-4 pb-3 ${meta.color} border-b`}>
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-white shadow-sm flex items-center justify-center">
+      {/* Coloured top strip with icon + category */}
+      <div className={`px-5 pt-4 pb-3 ${meta.color} border-b`}>
+        <div className="flex items-center gap-2 mb-2">
+          <div className="w-8 h-8 rounded-lg bg-white shadow-sm flex items-center justify-center flex-shrink-0">
             {meta.icon}
           </div>
-          <span className={meta.badge}>
+          <span className={`${meta.badge} flex-shrink-0`}>
             {t(`categories.${scheme.category}` as keyof ReturnType<typeof t>)}
           </span>
+          <span className="text-xs text-gray-400 font-medium bg-white px-2 py-0.5 rounded-full shadow-sm ml-auto flex-shrink-0">
+            {levelLabel}
+          </span>
         </div>
-        <span className="text-xs text-gray-400 font-medium bg-white px-2 py-0.5 rounded-full shadow-sm">
-          {levelLabel}
-        </span>
       </div>
 
       {/* Body */}
       <div className="px-5 pt-4 pb-3 flex flex-col gap-3 flex-1">
-        {/* Benefit amount — prominent */}
+        {/* Benefit amount — prominent, full width */}
         {scheme.benefit_amount && (
-          <div className="flex items-center gap-1.5">
-            <span className="text-lg font-bold text-saffron leading-none">{scheme.benefit_amount}</span>
-            <span className="text-xs text-gray-400">{t("benefit")}</span>
+          <div className="flex flex-col gap-0.5">
+            <span className="text-sm font-semibold text-gray-500">{t("benefit")}</span>
+            <span className="text-base font-bold text-saffron break-words">{scheme.benefit_amount}</span>
           </div>
         )}
 
