@@ -7,7 +7,7 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "https://skillful-amazement.up.railway.app/api/:path*"
+      "destination": "https://skillful-amazement-production.up.railway.app/api/:path*"
     }
   ],
   "headers": [
